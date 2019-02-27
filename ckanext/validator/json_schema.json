@@ -1,0 +1,38 @@
+{
+    "scheming_version": 1,
+    "dataset_type": "data-schema",
+    "about": "",
+    "about_url": "http://github.com/ckan/ckanext-scheming",
+    "dataset_fields": [
+	{
+	    "field_name": "title",
+	    "label": "Title",
+	    "preset": "title",
+	    "form_placeholder": "eg. A descriptive title"
+	},
+	{
+	    "field_name": "name",
+	    "label": "URL",
+	    "preset": "dataset_slug",
+	    "form_placeholder": "eg. my-dataset"
+	},{
+	    "field_name": "tag_string",
+	    "label": "Tags",
+	    "preset": "tag_string_autocomplete",
+	    "form_placeholder": "eg. economy, mental health, government"
+	},{
+	    "field_name": "owner_org",
+	    "label": "Organization",
+	    "preset": "dataset_organization"
+	}
+
+    ],
+    "resource_fields": [
+	{
+	    "field_name": "schema",
+	    "label": "JSON Schema",
+	    "preset": "json_object"
+
+	}
+    ]
+}

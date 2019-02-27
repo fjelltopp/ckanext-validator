@@ -1,0 +1,97 @@
+from ckan import plugins
+import logging
+
+from ckan.logic import ActionError, side_effect_free
+
+import cStringIO
+import goodtables
+import os
+from werkzeug.datastructures import FileStorage
+import inspect
+from ckan.lib import munge
+import json
+
+log = logging.getLogger(__name__)
+
+
+class ValidatorPlugin(plugins.SingletonPlugin):
+    """
+    This plugin implements data validation using the goodtables library
+
+    """
+    plugins.implements(plugins.IConfigurable)
+    plugins.implements(plugins.IConfigurer)
+    plugins.implements(plugins.IResourceController, inherit=True)
+
+    # IConfigurer
+    def update_config(self, config):
+        '''
+        This method allows to access and modify the CKAN configuration object
+        '''
+        log.info("ValidatorPlugin is enabled")
+        plugins.toolkit.add_template_directory(config, 'templates')
+
+    def configure(self, config):
+        schema_config = config.get('ckanext.validator.schema_config')
+        if not schema_config:
+             raise RuntimeError('Required config key ckanext.validator.schema_config not found')
+
+        self.schema_config = json.loads(schema_config)
+
+        config['ckanext.validator.schema_config'] = self.schema_config
+        for key, url in self.schema_config.iteritems():
+            schema = _load_schema(url)
+            self.schema_config[key] = schema
+        log.warning(self.schema_config)
+        
+    def before_create(self, context, resource):
+        """
+        Validates the data before the resource is created
+        """
+
+        schema_name = resource.get("validator_schema")
+        if not schema_name:
+            return
+        if schema_name not in self.schema_config:
+            raise FileNotFoundError("Could not find schema")
+        schema = self.schema_config.get(schema_name)
+        upload_field_storage = resource.get("upload")
+        if not isinstance(upload_field_storage, FileStorage):
+            raise plugins.toolkit.ValidationError({}, error_summary={
+                "No file uploaded":
+                "Please choose a file to upload (not a link), you might need to reselect the file"})
+        filename = munge.munge_filename(upload_field_storage.filename)
+        extension = filename.split(".")[-1]
+        file_upload = cStringIO.StringIO(upload_field_storage._file.read())
+        report = goodtables.validate(file_upload,
+                                     format=extension,
+                                     schema=schema)
+        log.warning(report)
+        error_count = report["tables"][0]["error-count"]
+
+        if error_count > 0:
+            error_summary = {}
+            for i, error in enumerate(report["tables"][0]["errors"]):
+                error_summary["Data Validation Error " + str(i + 1)] = error["message"]
+            raise plugins.toolkit.ValidationError({}, error_summary=error_summary)
+
+
+def _load_schema(url):
+    """
+    Given a path like "ckanext.spatialx:spatialx_schema.json"
+    find the second part relative to the import path of the first
+
+    Copied from ckanext-schema
+    """
+
+    module, file_name = url.split(':', 1)
+    try:
+        # __import__ has an odd signature
+        m = __import__(module, fromlist=[''])
+    except ImportError:
+        return
+    p = os.path.join(os.path.dirname(inspect.getfile(m)), file_name)
+    if os.path.exists(p):
+        return json.load(open(p))
+    else:
+        raise FileNotFoundError(url +" not found")

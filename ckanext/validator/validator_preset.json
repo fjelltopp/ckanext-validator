@@ -1,0 +1,17 @@
+ {
+  "scheming_presets_version": 1,
+  "about": "these are the default scheming field presets",
+  "about_url": "http://github.com/ckan/ckanext-scheming#preset",
+  "presets": [
+      {    
+	  "preset_name": "data_schema",
+	  "values": {
+	      "form_include_blank_choice": true,
+	      "validators": "unicode",
+	      "form_snippet": "validators.html"
+	     
+	  }
+        }
+
+  ]
+}

@@ -6,7 +6,7 @@
         'value': '',
          'text': ''}) -%}
 {% endif %}
-{% for schema in config["ckanext.validator.schema_config"].keys() %}
+{% for schema in h.validator_show_validation_schemas() %}
   {%- do options.append({
         'value': schema,
         'text': schema}) -%}

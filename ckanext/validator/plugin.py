@@ -1,6 +1,6 @@
 from ckan import plugins
 import logging
-
+from ckan.common import config
 from ckan.logic import ActionError, side_effect_free
 
 import cStringIO
@@ -14,6 +14,11 @@ import json
 log = logging.getLogger(__name__)
 
 
+def show_validation_schemas():
+    """ Returns a list of validation schemas"""
+    schema_config = config.get('ckanext.validator.schema_config')
+    return schema_config.keys()
+
 class ValidatorPlugin(plugins.SingletonPlugin):
     """
     This plugin implements data validation using the goodtables library
@@ -22,6 +27,11 @@ class ValidatorPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurable)
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IResourceController, inherit=True)
+    plugins.implements(plugins.ITemplateHelpers)
+
+
+    def get_helpers(self):
+        return {"validator_show_validation_schemas": show_validation_schemas}
 
     # IConfigurer
     def update_config(self, config):

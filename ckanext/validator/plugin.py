@@ -11,7 +11,7 @@ import cgi
 import inspect
 from ckan.lib import munge
 import json
-import time
+
 
 log = logging.getLogger(__name__)
 
@@ -21,8 +21,6 @@ def show_validation_schemas():
     schema_config = config.get('ckanext.validator.schema_config')
     return schema_config.keys()
 
-def time1():
-    return time.time()
 
 class ValidatorPlugin(plugins.SingletonPlugin):
     """
@@ -37,7 +35,6 @@ class ValidatorPlugin(plugins.SingletonPlugin):
 
     def get_helpers(self):
         return {"validator_show_validation_schemas": show_validation_schemas,
-                "validator_time": time1
         }
 
     # IConfigurer
@@ -74,13 +71,18 @@ class ValidatorPlugin(plugins.SingletonPlugin):
         schema = self.schema_config.get(schema_name)
         upload_field_storage = resource.get("upload")
         log.debug(upload_field_storage)
-        if (not isinstance(upload_field_storage, FileStorage)) and (not isinstance(upload_field_storage, cgi.FieldStorage)):
+        
+        if isinstance(upload_field_storage, FileStorage):
+            file_string = upload_field_storage._file.read()
+        elif isinstance(upload_field_storage, cgi.FieldStorage):
+            file_string = upload_field_storage.file.read()
+        else:
             raise plugins.toolkit.ValidationError({
                 "No file uploaded":
-                "Please choose a file to upload (not a link), you might need to reselect the file"})
+                ["Please choose a file to upload (not a link), you might need to reselect the file"]})
         filename = munge.munge_filename(upload_field_storage.filename)
         extension = filename.split(".")[-1]
-        file_upload = cStringIO.StringIO(upload_field_storage._file.read())
+        file_upload = cStringIO.StringIO(file_string)
         report = goodtables.validate(file_upload,
                                      format=extension,
                                      schema=schema)
@@ -90,7 +92,7 @@ class ValidatorPlugin(plugins.SingletonPlugin):
         if error_count > 0:
             error_summary = {}
             for i, error in enumerate(report["tables"][0]["errors"]):
-                error_summary["Data Validation Error " + str(i + 1)] = error["message"]
+                error_summary["Data Validation Error " + str(i + 1)] = [error["message"]]
             raise plugins.toolkit.ValidationError(error_summary)
 
 

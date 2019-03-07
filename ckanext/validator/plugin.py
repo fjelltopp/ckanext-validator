@@ -7,9 +7,11 @@ import cStringIO
 import goodtables
 import os
 from werkzeug.datastructures import FileStorage
+import cgi
 import inspect
 from ckan.lib import munge
 import json
+import time
 
 log = logging.getLogger(__name__)
 
@@ -18,6 +20,9 @@ def show_validation_schemas():
     """ Returns a list of validation schemas"""
     schema_config = config.get('ckanext.validator.schema_config')
     return schema_config.keys()
+
+def time1():
+    return time.time()
 
 class ValidatorPlugin(plugins.SingletonPlugin):
     """
@@ -31,7 +36,9 @@ class ValidatorPlugin(plugins.SingletonPlugin):
 
 
     def get_helpers(self):
-        return {"validator_show_validation_schemas": show_validation_schemas}
+        return {"validator_show_validation_schemas": show_validation_schemas,
+                "validator_time": time1
+        }
 
     # IConfigurer
     def update_config(self, config):
@@ -52,7 +59,6 @@ class ValidatorPlugin(plugins.SingletonPlugin):
         for key, url in self.schema_config.iteritems():
             schema = _load_schema(url)
             self.schema_config[key] = schema
-        log.warning(self.schema_config)
         
     def before_create(self, context, resource):
         """
@@ -64,10 +70,12 @@ class ValidatorPlugin(plugins.SingletonPlugin):
             return
         if schema_name not in self.schema_config:
             raise FileNotFoundError("Could not find schema")
+        log.warning(resource)
         schema = self.schema_config.get(schema_name)
         upload_field_storage = resource.get("upload")
-        if not isinstance(upload_field_storage, FileStorage):
-            raise plugins.toolkit.ValidationError({}, error_summary={
+        log.debug(upload_field_storage)
+        if (not isinstance(upload_field_storage, FileStorage)) and (not isinstance(upload_field_storage, cgi.FieldStorage)):
+            raise plugins.toolkit.ValidationError({
                 "No file uploaded":
                 "Please choose a file to upload (not a link), you might need to reselect the file"})
         filename = munge.munge_filename(upload_field_storage.filename)
@@ -76,14 +84,14 @@ class ValidatorPlugin(plugins.SingletonPlugin):
         report = goodtables.validate(file_upload,
                                      format=extension,
                                      schema=schema)
-        log.warning(report)
+        log.debug(report)
         error_count = report["tables"][0]["error-count"]
 
         if error_count > 0:
             error_summary = {}
             for i, error in enumerate(report["tables"][0]["errors"]):
                 error_summary["Data Validation Error " + str(i + 1)] = error["message"]
-            raise plugins.toolkit.ValidationError({}, error_summary=error_summary)
+            raise plugins.toolkit.ValidationError(error_summary)
 
 
 def _load_schema(url):

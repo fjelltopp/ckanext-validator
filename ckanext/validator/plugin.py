@@ -82,10 +82,24 @@ class ValidatorPlugin(plugins.SingletonPlugin):
                 ["Please choose a file to upload (not a link), you might need to reselect the file"]})
         filename = munge.munge_filename(upload_field_storage.filename)
         extension = filename.split(".")[-1]
+        scheme = "stream"
         file_upload = cStringIO.StringIO(file_string)
+        if extension == "csv":
+            scheme = "text"
+            file_upload = file_string
+        log.warning(schema)
+        log.warning({"custom-constraint": schema.get("custom-constraint",{})})
+
+        checks = ["schema"]
+
+        if "custom-constraint" in schema:
+            checks.append({"custom-constraint": schema.get("custom-constraint",{})})
+        
         report = goodtables.validate(file_upload,
                                      format=extension,
-                                     schema=schema)
+                                     scheme=scheme,
+                                     schema=schema,
+                                     checks=checks)
         log.debug(report)
         error_count = report["tables"][0]["error-count"]
 

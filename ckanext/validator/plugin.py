@@ -32,9 +32,9 @@ class ValidatorPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IResourceController, inherit=True)
     plugins.implements(plugins.ITemplateHelpers)
 
-
     def get_helpers(self):
-        return {"validator_show_validation_schemas": show_validation_schemas,
+        return {
+            "validator_show_validation_schemas": show_validation_schemas,
         }
 
     # IConfigurer
@@ -48,7 +48,9 @@ class ValidatorPlugin(plugins.SingletonPlugin):
     def configure(self, config):
         schema_config = config.get('ckanext.validator.schema_config')
         if not schema_config:
-             raise RuntimeError('Required config key ckanext.validator.schema_config not found')
+             raise RuntimeError(
+                'Required config key ckanext.validator.schema_config not found'
+            )
 
         self.schema_config = json.loads(schema_config)
 
@@ -56,7 +58,7 @@ class ValidatorPlugin(plugins.SingletonPlugin):
         for key, url in self.schema_config.iteritems():
             schema = _load_schema(url)
             self.schema_config[key] = schema
-        
+
     def before_create(self, context, resource):
         """
         Validates the data before the resource is created
@@ -71,7 +73,7 @@ class ValidatorPlugin(plugins.SingletonPlugin):
         schema = self.schema_config.get(schema_name)
         upload_field_storage = resource.get("upload")
         log.debug(upload_field_storage)
-        
+
         if isinstance(upload_field_storage, FileStorage):
             file_string = upload_field_storage._file.read()
         elif isinstance(upload_field_storage, cgi.FieldStorage):
@@ -94,7 +96,7 @@ class ValidatorPlugin(plugins.SingletonPlugin):
 
         if "custom-constraint" in schema:
             checks.append({"custom-constraint": schema.get("custom-constraint",{})})
-        
+
         report = goodtables.validate(file_upload,
                                      format=extension,
                                      scheme=scheme,

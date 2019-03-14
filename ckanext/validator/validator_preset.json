@@ -9,10 +9,5 @@
             "validators": "unicode",
             "form_snippet": "validators.html"
         }
-    }, {
-        "preset_name": "hidden_value",
-        "values": {
-            "form_snippet": "hidden_fields.html"
-        }
     }]
 }

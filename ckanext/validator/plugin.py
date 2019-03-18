@@ -69,7 +69,6 @@ class ValidatorPlugin(plugins.SingletonPlugin):
             return
         if schema_name not in self.schema_config:
             raise FileNotFoundError("Could not find schema")
-        log.warning(resource)
         schema = self.schema_config.get(schema_name)
         upload_field_storage = resource.get("upload")
         log.debug(upload_field_storage)
@@ -89,9 +88,6 @@ class ValidatorPlugin(plugins.SingletonPlugin):
         if extension == "csv":
             scheme = "text"
             file_upload = file_string
-        log.warning(schema)
-        log.warning({"custom-constraint": schema.get("custom-constraint",{})})
-
         checks = ["schema"]
 
         if "custom-constraint" in schema:

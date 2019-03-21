@@ -11,7 +11,7 @@ import cgi
 import inspect
 from ckan.lib import munge
 import json
-
+import pandas
 
 log = logging.getLogger(__name__)
 
@@ -87,9 +87,11 @@ class ValidatorPlugin(plugins.SingletonPlugin):
         file_upload = cStringIO.StringIO(file_string)
         if extension == "csv":
             scheme = "text"
-            file_upload = file_string
+            file_upload = file_string.decode("utf-8").encode("ascii", "ignore")
         checks = ["schema"]
-
+        if schema.get("transpose"):
+            file_upload = transpose(file_upload, extension)
+                                    
         if "custom-constraint" in schema:
             checks.append({"custom-constraint": schema.get("custom-constraint",{})})
 
@@ -104,10 +106,38 @@ class ValidatorPlugin(plugins.SingletonPlugin):
         if error_count > 0:
             error_summary = {}
             for i, error in enumerate(report["tables"][0]["errors"]):
-                error_summary["Data Validation Error " + str(i + 1)] = [error["message"]]
+                message = error["message"]
+                if schema.get("transpose"):
+                    message = message.replace("column", "xxxx").replace("row", "column").replace("xxxx", "row")
+                error_summary["Data Validation Error " + str(i + 1)] = [message]
             raise plugins.toolkit.ValidationError(error_summary)
 
 
+def transpose(data, extension):
+    
+    if extension == "csv":
+        f = cStringIO.StringIO(data)
+        out = cStringIO.StringIO()
+        df = pandas.read_csv(f)
+    elif extension in ["xls", "xlsx"]:
+        out = cStringIO.StringIO()
+        df = pandas.read_excel(data)
+    col_name = df.columns[0]
+    df.set_index(col_name, inplace=True)
+    trans = df.T
+    trans.index.name = col_name
+
+    if extension == "csv":
+        trans.to_csv(out)
+        out.seek(0)
+        return out.read()
+    elif extension in ["xls", "xlsx"]:
+        trans.to_excel(out)
+        out.seek(0)
+        return out
+        
+
+        
 def _load_schema(url):
     """
     Given a path like "ckanext.spatialx:spatialx_schema.json"
@@ -124,6 +154,10 @@ def _load_schema(url):
         return
     p = os.path.join(os.path.dirname(inspect.getfile(m)), file_name)
     if os.path.exists(p):
-        return json.load(open(p))
+        try:
+            return json.load(open(p))
+        except:
+            log.error("Error with shcmea " + url)
+            raise
     else:
         raise FileNotFoundError(url +" not found")

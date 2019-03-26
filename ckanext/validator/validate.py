@@ -5,6 +5,7 @@ import cgi
 from ckan.lib import munge
 import pandas
 import logging
+from ckan import plugins
 
 log = logging.getLogger(__name__)
 

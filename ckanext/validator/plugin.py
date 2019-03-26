@@ -77,8 +77,19 @@ class ValidatorPlugin(plugins.SingletonPlugin):
         Validates the data before the resource is created
         """
 
-        validate(context, resource, self.schema_config)
+        report, schema = validate(context, resource, self.schema_config)
+        error_count = report["tables"][0]["error-count"]
+    
+        if error_count > 0:
+            error_summary = {}
+            for i, error in enumerate(report["tables"][0]["errors"]):
+                message = error["message"]
+                if schema.get("transpose"):
+                    message = message.replace("column", "xxxx").replace("row", "column").replace("xxxx", "row")
+                error_summary["Data Validation Error " + str(i + 1)] = [message]
+            raise plugins.toolkit.ValidationError(error_summary)
 
+        
      
     def after_create(self, context, resource):
         mv = resource.get("manual_validation")

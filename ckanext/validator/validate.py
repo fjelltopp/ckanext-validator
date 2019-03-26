@@ -47,18 +47,10 @@ def validate(context, resource, schema_config):
                                  scheme=scheme,
                                  schema=schema,
                                  checks=checks)
-    log.debug(report)
-    error_count = report["tables"][0]["error-count"]
+    log.info(report)
+    return report, schema
 
-    if error_count > 0:
-        error_summary = {}
-        for i, error in enumerate(report["tables"][0]["errors"]):
-            message = error["message"]
-            if schema.get("transpose"):
-                message = message.replace("column", "xxxx").replace("row", "column").replace("xxxx", "row")
-                error_summary["Data Validation Error " + str(i + 1)] = [message]
-        raise plugins.toolkit.ValidationError(error_summary)
-
+    
 
 def transpose(data, extension):
     

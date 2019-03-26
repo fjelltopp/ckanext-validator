@@ -82,9 +82,8 @@ class ValidatorPlugin(plugins.SingletonPlugin):
      
     def after_create(self, context, resource):
         mv = resource.get("manual_validation")
-        log.warning(resource)
         if mv == "unvalidated":
-            log.warning("Sending Emails")
+            log.info("Sending Emails")
         
 def _load_schema(url):
     """

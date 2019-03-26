@@ -15,7 +15,7 @@ def validate(context, resource, schema_config):
     if not schema_name:
         return
     if schema_name not in schema_config:
-        raise FileNotFoundError("Could not find schema")
+        raise IOError("Could not find schema")
     schema = schema_config.get(schema_name)
     upload_field_storage = resource.get("upload")
     log.debug(upload_field_storage)

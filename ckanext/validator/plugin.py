@@ -2,16 +2,16 @@ from ckan import plugins
 import logging
 from ckan.common import config
 from ckan.logic import ActionError, side_effect_free
+from validate import validate
+import auth
 
-import cStringIO
-import goodtables
+
 import os
-from werkzeug.datastructures import FileStorage
-import cgi
 import inspect
-from ckan.lib import munge
 import json
-import pandas
+
+
+from validation_blueprint import manual_validation
 
 log = logging.getLogger(__name__)
 
@@ -31,12 +31,23 @@ class ValidatorPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IResourceController, inherit=True)
     plugins.implements(plugins.ITemplateHelpers)
+    plugins.implements(plugins.IBlueprint)
+    plugins.implements(plugins.IAuthFunctions)
 
     def get_helpers(self):
         return {
             "validator_show_validation_schemas": show_validation_schemas,
         }
 
+
+    def get_blueprint(self):
+        log.info("registering blueprint")
+        return manual_validation
+
+    def get_auth_functions(self):
+        return {
+            "manual_validation": auth.validator_manual_validation
+            }
     # IConfigurer
     def update_config(self, config):
         '''
@@ -59,84 +70,21 @@ class ValidatorPlugin(plugins.SingletonPlugin):
             schema = _load_schema(url)
             self.schema_config[key] = schema
 
+
+            
     def before_create(self, context, resource):
         """
         Validates the data before the resource is created
         """
 
-        schema_name = resource.get("validator_schema")
-        if not schema_name:
-            return
-        if schema_name not in self.schema_config:
-            raise FileNotFoundError("Could not find schema")
-        schema = self.schema_config.get(schema_name)
-        upload_field_storage = resource.get("upload")
-        log.debug(upload_field_storage)
+        validate(context, resource, self.schema_config)
 
-        if isinstance(upload_field_storage, FileStorage):
-            file_string = upload_field_storage._file.read()
-        elif isinstance(upload_field_storage, cgi.FieldStorage):
-            file_string = upload_field_storage.file.read()
-        else:
-            raise plugins.toolkit.ValidationError({
-                "No file uploaded":
-                ["Please choose a file to upload (not a link), you might need to reselect the file"]})
-        filename = munge.munge_filename(upload_field_storage.filename)
-        extension = filename.split(".")[-1]
-        scheme = "stream"
-        file_upload = cStringIO.StringIO(file_string)
-        if extension == "csv":
-            scheme = "text"
-            file_upload = file_string.decode("utf-8").encode("ascii", "ignore")
-        checks = ["schema"]
-        if schema.get("transpose"):
-            file_upload = transpose(file_upload, extension)
-                                    
-        if "custom-constraint" in schema:
-            checks.append({"custom-constraint": schema.get("custom-constraint",{})})
-
-        report = goodtables.validate(file_upload,
-                                     format=extension,
-                                     scheme=scheme,
-                                     schema=schema,
-                                     checks=checks)
-        log.debug(report)
-        error_count = report["tables"][0]["error-count"]
-
-        if error_count > 0:
-            error_summary = {}
-            for i, error in enumerate(report["tables"][0]["errors"]):
-                message = error["message"]
-                if schema.get("transpose"):
-                    message = message.replace("column", "xxxx").replace("row", "column").replace("xxxx", "row")
-                error_summary["Data Validation Error " + str(i + 1)] = [message]
-            raise plugins.toolkit.ValidationError(error_summary)
-
-
-def transpose(data, extension):
-    
-    if extension == "csv":
-        f = cStringIO.StringIO(data)
-        out = cStringIO.StringIO()
-        df = pandas.read_csv(f)
-    elif extension in ["xls", "xlsx"]:
-        out = cStringIO.StringIO()
-        df = pandas.read_excel(data)
-    col_name = df.columns[0]
-    df.set_index(col_name, inplace=True)
-    trans = df.T
-    trans.index.name = col_name
-
-    if extension == "csv":
-        trans.to_csv(out)
-        out.seek(0)
-        return out.read()
-    elif extension in ["xls", "xlsx"]:
-        trans.to_excel(out)
-        out.seek(0)
-        return out
-        
-
+     
+    def after_create(self, context, resource):
+        mv = resource.get("manual_validation")
+        log.warning(resource)
+        if mv == "unvalidated":
+            log.warning("Sending Emails")
         
 def _load_schema(url):
     """

@@ -1,0 +1,23 @@
+{% extends "page.html" %}
+
+{% block subtitle %}{{ _('Manual Validation') }}{% endblock %}
+
+
+
+
+
+{% block primary %}
+  <article class="module">
+    <div class="module-content">
+      <h1 class="page-heading">{{ _('Manueal Validation') }}</h1>
+      <h2> Validation for data set {{resource.name}} from organisation {{pkg.organization.title}}</h2>
+      <p> Download the file <a href="{{resource.url}}"> here </a>. If the file is valid, please click he validate button below. </p>
+	
+	<form class="module-content form-horizontal" action="/manual_validation/validate" method="post">
+	  <input id="resource-id" type="hidden" name="resource_id" value="{{resource["id"]}}" />
+	<button class="btn btn-primary" type="submit" name="save" ">Validate</button>
+      </form>
+    </div>
+  </article>
+{% endblock %}
+{% block secondary %}{% endblock %}

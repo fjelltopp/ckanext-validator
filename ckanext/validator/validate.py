@@ -61,10 +61,14 @@ def transpose(data, extension):
     elif extension in ["xls", "xlsx"]:
         out = cStringIO.StringIO()
         df = pandas.read_excel(data)
-    col_name = df.columns[0]
-    df.set_index(col_name, inplace=True)
-    trans = df.T
-    trans.index.name = col_name
+
+    if len(df.columns) == 0:
+        trans = df
+    else:
+        col_name = df.columns[0]
+        df.set_index(col_name, inplace=True)
+        trans = df.T
+        trans.index.name = col_name
 
     if extension == "csv":
         trans.to_csv(out)

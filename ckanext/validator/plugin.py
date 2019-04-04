@@ -70,14 +70,15 @@ class ValidatorPlugin(plugins.SingletonPlugin):
             schema = _load_schema(url)
             self.schema_config[key] = schema
 
-
-            
+        
     def before_create(self, context, resource):
         """
         Validates the data before the resource is created
         """
-
-        report, schema = validate(context, resource, self.schema_config)
+        validation_outcome = validate(context, resource, self.schema_config)
+        if not validation_outcome:
+            return
+        report, schema = validation_outcome
         error_count = report["tables"][0]["error-count"]
     
         if error_count > 0:

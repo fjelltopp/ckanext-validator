@@ -9,6 +9,7 @@ from ckan import plugins
 
 log = logging.getLogger(__name__)
 
+
 def validate(context, resource, schema_config):
 
     schema_name = resource.get("validator_schema")
@@ -16,7 +17,9 @@ def validate(context, resource, schema_config):
         return
     if schema_name not in schema_config:
         raise IOError("Could not find schema")
+
     schema = schema_config.get(schema_name)
+
     upload_field_storage = resource.get("upload")
     log.debug(upload_field_storage)
 
@@ -38,10 +41,10 @@ def validate(context, resource, schema_config):
     checks = ["schema"]
     if schema.get("transpose"):
         file_upload = transpose(file_upload, extension)
-                                    
+
     if "custom-constraint" in schema:
         checks.append({"custom-constraint": schema.get("custom-constraint",{})})
-        
+
     report = goodtables.validate(file_upload,
                                  format=extension,
                                  scheme=scheme,
@@ -50,10 +53,9 @@ def validate(context, resource, schema_config):
     log.info(report)
     return report, schema
 
-    
 
 def transpose(data, extension):
-    
+
     if extension == "csv":
         f = cStringIO.StringIO(data)
         out = cStringIO.StringIO()

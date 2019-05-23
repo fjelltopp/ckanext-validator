@@ -1,17 +1,12 @@
 from ckan import plugins
 import logging
 from ckan.common import config
-from ckan.logic import ActionError, side_effect_free
 from validate import validate
 from collections import OrderedDict
 import auth
-
-
 import os
 import inspect
 import json
-
-
 from validation_blueprint import manual_validation
 
 log = logging.getLogger(__name__)

@@ -40,12 +40,12 @@ def validate_view(resource_id):
 
 def validate():
     context = {}
+    resource_id = toolkit.request.form.get("resource_id")
     try:
         toolkit.check_access('manual_validation', context)
     except toolkit.NotAuthorized:
         toolkit.abort(403, toolkit._('User %r not authorized to edit %s') %
                       (context.user, resource_id))
-    resource_id = toolkit.request.form.get("resource_id")
     if not resource_id:
         toolkit.abort(404, toolkit._('Resource not found'))
     data_dict = {
@@ -59,6 +59,7 @@ def validate():
 
     h.flash(toolkit._("Resource sucesfully validated"))
     return toolkit.redirect_to("/")
+
 
 manual_validation.add_url_rule(
     u'/<resource_id>',

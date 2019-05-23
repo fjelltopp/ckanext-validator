@@ -168,8 +168,8 @@ def _load_schema(url):
     if os.path.exists(p):
         try:
             return json.load(open(p))
-        except:
+        except Exception:
             log.error("Error with shcmea " + url)
             raise
     else:
-        raise FileNotFoundError(url + " not found")
+        raise IOError(url + "file not found")

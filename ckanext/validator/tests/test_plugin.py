@@ -8,7 +8,7 @@ import ckan.plugins
 # import ckan.logic as logic
 
 
-class TestYTPValidatorPlugin(object):
+class TestValidatorPlugin(object):
     '''
     Tests for the ckanext.example_iauthfunctions.plugin module.
 

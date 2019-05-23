@@ -30,7 +30,8 @@ def validate(context, resource, schema_config):
     else:
         raise plugins.toolkit.ValidationError({
             "No file uploaded":
-            ["Please choose a file to upload (not a link), you might need to reselect the file"]})
+            ["Please choose a file to upload (not a link), you might need to reselect the file"]
+        })
     filename = munge.munge_filename(upload_field_storage.filename)
     extension = filename.split(".")[-1]
     scheme = "stream"
@@ -41,15 +42,17 @@ def validate(context, resource, schema_config):
     checks = ["schema"]
     if schema.get("transpose"):
         file_upload = transpose(file_upload, extension)
-
     if "custom-constraint" in schema:
-        checks.append({"custom-constraint": schema.get("custom-constraint",{})})
-
-    report = goodtables.validate(file_upload,
-                                 format=extension,
-                                 scheme=scheme,
-                                 schema=schema,
-                                 checks=checks)
+        checks.append({
+            "custom-constraint": schema.get("custom-constraint", {})
+        })
+    report = goodtables.validate(
+        file_upload,
+        format=extension,
+        scheme=scheme,
+        schema=schema,
+        checks=checks
+    )
     log.info(report)
     return report, schema
 

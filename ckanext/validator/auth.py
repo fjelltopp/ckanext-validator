@@ -1,6 +1,3 @@
-import ckan.plugins.toolkit as toolkit
-from ckanext.restricted import logic
-
 from logging import getLogger
 log = getLogger(__name__)
 

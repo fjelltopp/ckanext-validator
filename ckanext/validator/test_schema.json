@@ -1,0 +1,17 @@
+{
+  "fields": [{
+    "name": "id",
+    "type": "number"
+  },{
+    "name": "name",
+    "type": "string"
+  },{
+    "name": "value",
+    "type": "integer",
+    "constraints": {
+  		"required": true,
+  		"minimum": 0,
+  		"maximum": 100
+  	}
+  }]
+}

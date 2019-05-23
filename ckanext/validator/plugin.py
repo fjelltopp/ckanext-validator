@@ -1,8 +1,8 @@
 from ckan import plugins
-import logging
 from ckan.common import config
 from validate import validate
 from collections import OrderedDict
+import logging
 import auth
 import os
 import inspect
@@ -84,7 +84,14 @@ class ValidatorPlugin(plugins.SingletonPlugin):
 
 
 def create_error_summary(report, schema):
-
+    """
+    This function takes a good tables error report and turns them into a grouped list of error
+    messages to be displayed in the frontend.  If someone has failed to comply with the data
+    template in one row, it is likely they havn't complied with the template in many rows. It is
+    very easy to end up with the same error message duplicated hundreds of times.  In these
+    situations we want to group the errors of the same type together.  We do this by grouping on
+    column and error code (so same type of errors in the same columns are grouped).
+    """
     error_summary = {}
     grouped_errors = OrderedDict()
 

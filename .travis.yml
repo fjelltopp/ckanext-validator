@@ -1,39 +1,34 @@
-# use an older trusty image, because the newer images cause build errors with
-# psycopg2 that comes with CKAN<2.8:
-#   "Error: could not determine PostgreSQL version from '10.1'"
-# see https://github.com/travis-ci/travis-ci/issues/8897
 dist: trusty
 group: deprecated-2017Q4
-
-# matrix
 python:
-  - "2.7"
+- '2.7'
 env:
-  - CKANVERSION=2.8.2
-  - CKANVERSION=master
-# tests
+- CKANVERSION=2.8.2
+- CKANVERSION=master
 services:
-  - postgresql
-  - redis-server
+- postgresql
+- redis-server
 install:
-  - bash bin/travis-build.bash
-  - pip install --user coveralls
+- bash bin/travis-build.bash
+- pip install --user coveralls
 script: sh bin/travis-run.sh
 after_success:
-  - coveralls
-
-# additional jobs
+- coveralls
 matrix:
   include:
-    - name: "Flake8 on Python 2.7"
-      dist: xenial
-      cache: pip
-      install: pip install --user flake8
-      script:
-        - flake8 --version
-        - flake8 . --count --max-complexity=12 --max-line-length=127 --statistics --exclude ckan,{{ project }}
-      python: "2.7"
-      # overwrite matrix
-      env:
-        - FLAKE8=true
-        - CKANVERSION=master
+  - name: Flake8 on Python 2.7
+    dist: xenial
+    cache: pip
+    install: pip install --user flake8
+    script:
+    - flake8 --version
+    - flake8 . --count --max-complexity=12 --max-line-length=127 --statistics --exclude
+      ckan,{{ project }}
+    python: '2.7'
+    env:
+    - FLAKE8=true
+    - CKANVERSION=master
+notifications:
+  slack:
+    rooms:
+      secure: PYTWCa1xvk1zL1MbhRrrbd56mQaPtOzqSE8CT0VRAwfzL8+hT22bUakUnTF0v5YDdEYiizyUjS5VBgseH/ivwveBO2JCGPoSYnpdEmzgXZFjyb8+r0DscblfeZFLkDATzpshx1dWl97Bf3tlFJRGPV6HPZbdwNKlj0wOjpp4owzYCkOzsNHjX688sF5V3S/DzK0VOryh6pbuAyjE11kX3lv2sVK6JoE09VlwExDDufSlT8vQFYvJFMwQCMSWG2kypHwNo47bUV4DVwKvy0W7FppXhrpe2YiWMO0hpvTMRFp/kjMuy+mjF2wT67GDEmYUvRa/akYlD7A6dhgmwXb7KYPdLfmOYwurUrHb36uaf5dTs/JT/Wyocgtg0/qI+77VLHO6UZh1KYfuHr9TyiiJHsj7z2aN1GVd03Ub/QVKegr6KHDuTHXSNZ3WcRdFxFu2uab3svEximjFDBQmC3tCwlkZ0fFBAMjLpATlVAQwVckc3ewRLMs1xVGgPAl0aiFImvOZMNmja3123MyWIGJmTMwIXuX0rV9vkZEt/r5WcAtTjXRP2LMRU6hGaD0/5kgzpxT9S/p/sXIiT+8SjwJycbUW/HledP+JlrI+gk3N5dX9NJNrH3BeRnPGKei+BGleSTVKlAgx1DHRGWzFHNq6b5ueRUstUGITRuMfJuXn6zY=

@@ -53,15 +53,30 @@ class ValidatorPlugin(plugins.SingletonPlugin):
         plugins.toolkit.add_template_directory(config, 'templates')
 
     def configure(self, config):
+        # Load the config text and throw error if config doesn't exist
         schema_config = config.get('ckanext.validator.schema_config')
         if not schema_config:
             raise RuntimeError(
                 'Required config key ckanext.validator.schema_config not found'
             )
+
+        # Turn schema config text to json
         self.schema_config = json.loads(schema_config)
+
+        # Load all schemas in the specified schema directory
+        if self.schema_config.get(u"schema_directory"):
+            schemas = _files_from_directory(
+                self.schema_config.pop("schema_directory", "")
+            )
+            for name, path in schemas.iteritems():
+                self.schema_config[name] = path
+
+        # Reset the config value to the fully loaded python dict
         config['ckanext.validator.schema_config'] = self.schema_config
-        for key, url in self.schema_config.iteritems():
-            schema = _load_schema(url)
+
+        # Load each schema into the Plugin's schema_config property
+        for key, path in self.schema_config.iteritems():
+            schema = _load_schema_from_path(path)
             self.schema_config[key] = schema
 
     def before_create(self, context, resource):
@@ -155,6 +170,31 @@ def create_error_summary(report, schema):
             break
 
     return error_summary
+
+
+def _files_from_directory(path, extension='.json'):
+    listed_files = {}
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if extension in file:
+                name = file.split(".json")[0]
+                listed_files[name] = os.path.join(root, file)
+    return listed_files
+
+
+def _load_schema_from_path(path):
+    """
+    Given an absolute file path (beginning with /) load a json schema object
+    in that file.
+    """
+    if os.path.exists(path):
+        try:
+            return json.load(open(path))
+        except Exception:
+            log.error("Error reading schema " + path)
+            raise
+    else:
+        raise IOError(path + " file not found")
 
 
 def _load_schema(url):

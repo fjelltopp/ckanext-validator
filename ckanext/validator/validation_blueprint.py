@@ -1,23 +1,25 @@
 # encoding: utf-8
 import logging
-
-from flask import Blueprint
+from flask import Blueprint, Response, abort
 import ckan.logic as logic
 from ckan.plugins import toolkit
 import ckan.lib.helpers as h
+from schemed_table import SchemedTable
+from ckan.plugins.toolkit import config
+import logging
+
 log = logging.getLogger(__name__)
 
-manual_validation = Blueprint(
+validation_blueprint = Blueprint(
     u'validation_blueprint',
     __name__,
-    url_prefix=u'/manual_validation'
+    url_prefix=u'/validation'
 )
 
 
 def validate_view(resource_id):
-    """ Set's validated=True for the given resource id"""
+    """ Manual validation. Set's validated=True for the given resource id"""
     context = {}
-
     try:
         toolkit.check_access('manual_validation', context)
     except toolkit.NotAuthorized:
@@ -25,8 +27,7 @@ def validate_view(resource_id):
                       (context.user, resource_id))
     data_dict = {
         "id": resource_id
-        }
-
+    }
     res = toolkit.get_action("resource_show")(context, data_dict)
     pkg_dict = toolkit.get_action('package_show')(
         dict(context, return_type='dict'),
@@ -39,6 +40,9 @@ def validate_view(resource_id):
 
 
 def validate():
+    """
+    For Manual Validation
+    """
     context = {}
     resource_id = toolkit.request.form.get("resource_id")
     try:
@@ -61,12 +65,38 @@ def validate():
     return toolkit.redirect_to("/")
 
 
-manual_validation.add_url_rule(
-    u'/<resource_id>',
-    view_func=validate_view
+def download_table_template(validation_schema):
+    """
+    Downloads a CSV template file for the specified validation schema.
+    """
+    try:
+
+        validator_config = config.get('ckanext.validator.schema_config')
+        schemed_table = validator_config.get(validation_schema)
+        template = schemed_table.create_template()
+        csv_content = template.to_csv(header=False, index=False)
+
+        return Response(
+            csv_content,
+            mimetype="text/csv",
+            headers={"Content-disposition":
+                     "attachment; filename=" + str(validation_schema) + ".csv"}
+        )
+
+    except Exception as e:
+        abort(404, "404 Not Found Error: No schema exists for " + validation_schema)
+
+
+validation_blueprint.add_url_rule(
+    u'/template/<validation_schema>',
+    view_func=download_table_template
 )
-manual_validation.add_url_rule(
+validation_blueprint.add_url_rule(
     u'/validate',
     view_func=validate,
     methods=["POST"]
+)
+validation_blueprint.add_url_rule(
+    u'/<resource_id>',
+    view_func=validate_view
 )

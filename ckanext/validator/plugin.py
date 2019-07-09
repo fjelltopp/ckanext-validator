@@ -7,7 +7,8 @@ import auth
 import os
 import inspect
 import json
-from validation_blueprint import manual_validation
+from validation_blueprint import validation_blueprint
+from schemed_table import SchemedTable
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class ValidatorPlugin(plugins.SingletonPlugin):
 
     def get_blueprint(self):
         log.info("registering blueprint")
-        return manual_validation
+        return validation_blueprint
 
     def get_auth_functions(self):
         return {
@@ -189,7 +190,7 @@ def _load_schema_from_path(path):
     """
     if os.path.exists(path):
         try:
-            return json.load(open(path))
+            return SchemedTable(path)
         except Exception:
             log.error("Error reading schema " + path)
             raise

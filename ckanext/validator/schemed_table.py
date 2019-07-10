@@ -26,14 +26,17 @@ class SchemedTable:
         # Create the csv template column by column
         for f in self.schema['fields']:
 
+            # Pop enum out of constraints as we treat this seperately
+            enum = f.get('constraints', {}).pop('enum', [])
+
             # State basic field constraints
             default_values = ["", "--conditions--", "type: "+str(f['type'])]
             for k, v in f.get('constraints', {}).iteritems():
                 default_values += [str(k)+": "+str(v)]
 
             # List possible values if enum field
-            if f.get('enum'):
-                default_values += ["", "--restricted values--"] + f.get('enum', [])
+            if enum:
+                default_values += ["", "--restricted values--"] + enum
 
             # Detail any foreign references
             if f['name'] in foreign_keys.keys():

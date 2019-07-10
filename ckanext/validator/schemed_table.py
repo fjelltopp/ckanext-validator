@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 from collections import OrderedDict
+from io import open
 
 
 class SchemedTable:
@@ -11,7 +12,7 @@ class SchemedTable:
 
     def __init__(self, fpath):
         self.fname = fpath.split('/')[-1][:-5]  # fName w/o path or extension
-        with open(fpath, "r") as read_file:
+        with open(fpath, encoding='utf-8') as read_file:
             self.schema = json.load(read_file)
 
     def create_template(self):

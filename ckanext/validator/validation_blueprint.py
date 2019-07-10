@@ -4,9 +4,7 @@ from flask import Blueprint, Response, abort
 import ckan.logic as logic
 from ckan.plugins import toolkit
 import ckan.lib.helpers as h
-from schemed_table import SchemedTable
 from ckan.plugins.toolkit import config
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -74,7 +72,7 @@ def download_table_template(validation_schema):
         validator_config = config.get('ckanext.validator.schema_config')
         schemed_table = validator_config.get(validation_schema)
         template = schemed_table.create_template()
-        csv_content = template.to_csv(header=False, index=False)
+        csv_content = template.to_csv(header=False, index=False, encoding='utf-8')
 
         return Response(
             csv_content,
@@ -83,8 +81,16 @@ def download_table_template(validation_schema):
                      "attachment; filename=" + str(validation_schema) + ".csv"}
         )
 
-    except Exception as e:
+    except AttributeError as e:
+        logging.error(e)
         abort(404, "404 Not Found Error: No schema exists for " + validation_schema)
+    except Exception as e:
+        logging.error(e)
+        abort(
+            500,
+            "500 Internal server error: Something went wrong whilst "
+            "generating your template " + validation_schema
+        )
 
 
 validation_blueprint.add_url_rule(

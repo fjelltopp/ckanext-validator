@@ -55,7 +55,8 @@ cd ckan
 paster db init -c test-core.ini
 cd -
 
-echo "Installing ckanext-restricted and its requirements..."
+echo "Installing ckanext-validator and its requirements..."
+echo $PWD
 sudo python setup.py develop
 pip install --user -r requirements.txt
 

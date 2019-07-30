@@ -137,7 +137,11 @@ def create_error_summary(report, schema):
     errors_to_show = 10
     counter = 1
     errors_to_expand = max(0, errors_to_show - len(grouped_errors.keys()))
-    errors_to_expand = int(errors_to_expand / number_large_groups)
+    try:
+        errors_to_expand = int(errors_to_expand / number_large_groups)
+    except ZeroDivisionError:
+        # If there are 0 large groups, then don't expand any of them
+        errors_to_expand = 0
 
     # Unpack the errors according to some sensible logic
     for group, messages in grouped_errors.items():

@@ -76,10 +76,11 @@ class SchemedTable:
             fname = self.fname + "_template.csv"
         template = self.create_template()
         file = open(directory+"/"+fname, "w")
-        file.write(template.to_csv(header=False, index=False))
+        csv_table = template.to_csv(header=True, index=False, encoding='utf-8')
+        file.write(unicode(csv_table, encoding='utf-8'))
         file.close()
 
-    def create_table(self, spectrum_file):
+    def create_table(self):
         """
         This function should be overriden by sub-classes. It should create
         a table from the schema and populate it with data from a Spectrum File.
@@ -94,5 +95,6 @@ class SchemedTable:
             fname = self.fname + "_" + spectrum_file.country + ".csv"
         table = self.create_table(spectrum_file)
         file = open(fname, "w")
-        file.write(table.to_csv(header=True, index=False))
+        csv_table = table.to_csv(header=True, index=False, encoding='utf-8')
+        file.write(unicode(csv_table, encoding='utf-8'))
         file.close()
